@@ -3,18 +3,18 @@ Experimental multilingual IR repo for WSDM MIRACL.
 
 # Dataset
 - MIRACL
-Use the huggingface API to access data. ISO language codes: 'ar', 'bn', 'en', 'es', 'fa', 'fi', 'fr', 'hi', 'id', 'ja', 'ko', 'ru', 'sw', 'te', 'th', 'zh'
+Use the huggingface API to access data. 
+ISO language codes: 'ar', 'bn', 'en', 'es', 'fa', 'fi', 'fr', 'hi', 'id', 'ja', 'ko', 'ru', 'sw', 'te', 'th', 'zh'. 
+Check [MIRACL in huggingface](https://huggingface.co/datasets/miracl/miracl).
+
+* queryid, query, positive passages and negative passages
 ```
-python3 archived/get_dataset.py
+dataset=load_dataset('miracl/miracl', f"{lang}")
+qid=dataset['train']['query_id]
+qtext=dataset['train']['query']
+neg_p=dataset['train']['positive_passages']
+pos_p=dataset['train']['negative_passages']
 ```
-    * queryid, query, positive passages and negative passages
-    ```
-    dataset=load_dataset('miracl/miracl', f"{lang}")
-    qid=dataset['train']['query_id]
-    qtext=dataset['train']['query']
-    neg_p=dataset['train']['positive_passages']
-    pos_p=dataset['train']['negative_passages']
-    ```
 
 # Requirements
 - pyserini

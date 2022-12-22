@@ -33,8 +33,8 @@ def searching(args):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument("-k", "--k", default=1000, type=int)
-    parser.add_argument("-k1", "--k1", type=float, default=0.82)
-    parser.add_argument("-b", "--b", type=float, default=0.68)
+    parser.add_argument("-k1", "--k1", type=float, default=0.9)
+    parser.add_argument("-b", "--b", type=float, default=0.4)
     parser.add_argument("-index", "--index", type=str, default='miracl-v1.0-zh')
     parser.add_argument("-output", "--output", default='runs/run.miracl.bm25.zh.dev.txt', type=str)
     # special args
