@@ -20,13 +20,13 @@ class DataCollatorFormonoBERT:
     def __call__(self, features: List[Dict[str, Any]]) -> Dict[str, Any]:
 
         # text and id info 
-        q_texts = [batch['query']} for batch in features]
-        p_texts = [batch['passage']} for batch in features]
-        ids = [(batch['qid'], batch['pid']) for batch in features]
+        texts_q = [batch['query'] for batch in features]
+        texts_p = [batch['passage'] for batch in features]
+        ids = [(batch['qid'], batch['did']) for batch in features]
 
         # input # if istrain, the 'label' should be zero or one.
         inputs = self.tokenizer(
-                q_texts, p_texts,
+                texts_q, texts_p,
                 max_length=self.max_length,
                 truncation=True,
                 padding=True,
@@ -48,25 +48,27 @@ class DataCollatorForDPR:
     # spec
     istrain: Union[bool] = False
     language: str = "en"
+    max_q_length: Optional[int] = 36
+    max_p_length: Optional[int] = 512
 
     def __call__(self, features: List[Dict[str, Any]]) -> Dict[str, Any]:
 
         # text and id info 
-        q_texts = [batch['query']} for batch in features]
-        p_texts = [batch['passage']} for batch in features]
-        ids = [(batch['qid'], batch['pid']) for batch in features]
+        texts_q = [batch['query'] for batch in features]
+        texts_p = [batch['passage'] for batch in features]
+        ids = [(batch['qid'], batch['did']) for batch in features]
 
         # input # if istrain, the 'label' should be zero or one.
         q_inputs = self.tokenizer(
-                q_texts, 
-                max_length=self.max_length,
+                texts_q, 
+                max_length=self.max_q_length,
                 truncation=True,
                 padding=True,
                 return_tensors=self.return_tensors
         )
         p_inputs = self.tokenizer(
-                p_texts,
-                max_length=self.max_length,
+                texts_p,
+                max_length=self.max_p_length,
                 truncation=True,
                 padding=True,
                 return_tensors=self.return_tensors
@@ -89,19 +91,19 @@ class DataCollatorFormonoT5:
 
     def __call__(self, features: List[Dict[str, Any]]) -> Dict[str, Any]:
 
-        qp_texts = [f"Query: {batch['query']} Document: {batch['passage']} Relevant:" \
+        texts_qp = [f"Query: {batch['query']} Document: {batch['passage']} Relevant:" \
                 for batch in features]
 
         inputs = self.tokenizer(
-                qp_texts,
+                texts_qp,
                 max_length=self.max_length,
                 truncation=True,
                 padding=True,
                 return_tensors=self.return_tensors
         )
 
-        # qid-pid pairs 
-        ids = [(batch['qid'], batch['pid']) for batch in features]
+        # qid-did pairs 
+        ids = [(batch['qid'], batch['did']) for batch in features]
 
         # labeling (if training)
         if self.istrain:
