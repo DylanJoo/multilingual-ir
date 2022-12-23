@@ -33,4 +33,16 @@ pos_p=dataset['train']['negative_passages']
     ```
 
     ```
+- mDPR dense retrieval
+    * prebuilt miracl indexes from pyserini, 16 languges
+    ```
+    from pyserini.search.lucene import LuceneSearcher
+    FaissSearcher.from_prebuilt_index(f'miracl-v1.0-f{lang}')
+    ```
+    * Retrieval
+    ```
 
+    ```
+
+# Methods
+- Zero-shot reranking (using mDPR)

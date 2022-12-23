@@ -41,13 +41,13 @@ class DataCollatorForDPR:
     tokenizer: Union[PreTrainedTokenizerBase] = None
     padding: Union[bool, str, PaddingStrategy] = True
     truncation: Union[bool, str] = True
-    max_length: Optional[int] = 512
     pad_to_multiple_of: Optional[int] = None
     return_tensors: str = "pt"
     padding: Union[bool, str] = True
     # spec
     istrain: Union[bool] = False
     language: str = "en"
+    # max_length: Optional[int] = 512
     max_q_length: Optional[int] = 36
     max_p_length: Optional[int] = 512
 
@@ -87,7 +87,6 @@ class DataCollatorFormonoT5:
     padding: Union[bool, str] = True
     # spec
     istrain: Union[bool] = False
-    return_text: Union[bool] = False
 
     def __call__(self, features: List[Dict[str, Any]]) -> Dict[str, Any]:
 
@@ -114,4 +113,4 @@ class DataCollatorFormonoT5:
             ).input_ids
             inputs['labels'] = target
 
-            return inputs, ids
+        return inputs, ids

@@ -1,5 +1,6 @@
 for lang in zh ar bn en es fa fi fr hi id ja ko ru sw te th;do
-    python3 unsprv_rerank.py \
+    rm runs/run.miracl.bm25-rerank.$lang.dev.txt 
+    python3 zeroshot_rerank.py \
         --run runs/run.miracl.bm25.$lang.dev.txt \
         --lang $lang \
         --topk 100 \
