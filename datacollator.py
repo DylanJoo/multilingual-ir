@@ -14,7 +14,7 @@ class DataCollatorFormonoBERT:
     return_tensors: str = "pt"
     padding: Union[bool, str] = True
     # spec
-    istrain: Union[bool] = False
+    # istrain: Union[bool] = False
     language: str = "en"
 
     def __call__(self, features: List[Dict[str, Any]]) -> Dict[str, Any]:
@@ -24,7 +24,6 @@ class DataCollatorFormonoBERT:
         texts_p = [batch['passage'] for batch in features]
         ids = [(batch['qid'], batch['did']) for batch in features]
 
-        # input # if istrain, the 'label' should be zero or one.
         inputs = self.tokenizer(
                 texts_q, texts_p,
                 max_length=self.max_length,
@@ -114,3 +113,29 @@ class DataCollatorFormonoT5:
             inputs['labels'] = target
 
         return inputs, ids
+
+@dataclass
+class DataCollatorForSeq2Seq:
+    tokenizer: Union[PreTrainedTokenizerBase] = None
+    padding: Union[bool, str, PaddingStrategy] = True
+    truncation: Union[bool, str] = True
+    max_length: Optional[int] = None
+    pad_to_multiple_of: Optional[int] = None
+    return_tensors: str = "pt"
+    padding: Union[bool, str] = True
+    # spec
+    istrain: Union[bool] = False
+
+    def __call__(self, features: List[Dict[str, Any]]) -> Dict[str, Any]:
+
+        text = [batch['text'] for batch in features]
+
+        inputs = self.tokenizer(
+                text,
+                max_length=self.max_length,
+                truncation=True,
+                padding=True,
+                return_tensors=self.return_tensors
+        )
+
+        return inputs
