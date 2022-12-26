@@ -5,3 +5,4 @@ submission/
 __pycache__/
 */__pycache__/
 dataset/*json
+checkpoints/
