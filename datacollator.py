@@ -35,6 +35,57 @@ class DataCollatorFormonoBERT:
         return inputs, ids
 
 @dataclass
+class DataCollatorFormDPR:
+    """for biencoder models """
+    tokenizer: Union[PreTrainedTokenizerBase] = None
+    padding: Union[bool, str, PaddingStrategy] = True
+    truncation: Union[bool, str] = True
+    pad_to_multiple_of: Optional[int] = None
+    return_tensors: str = "pt"
+    padding: Union[bool, str] = True
+    # spec
+    istrain: Union[bool] = False
+    source_language: str = "en"
+    target_language: str = "x"
+    # max_length: Optional[int] = 512
+    max_q_length: Optional[int] = None
+    max_d_length: Optional[int] = None
+
+    def relevance_transfer(self, features):
+        # rich lang
+        texts_q = [batch['query'] for batch in features]
+        texts_d_pos = [batch['positive'] for batch in features]
+        # low lang
+        texts_q += [batch['query_low'] for batch in features]
+        texts_d_pos += [batch['positive_low'] for batch in features]
+
+        # setting 1: only positive passages
+        texts_d = texts_d_pos
+        return texts_q, texts_d
+
+    def __call__(self, features: List[Dict[str, Any]]) -> Dict[str, Any]:
+
+        # text and id info
+        texts_q, texts_d = self.relevance_transfer(features)
+
+        # input # if istrain, the 'label' should be zero or one.
+        q_inputs = self.tokenizer(
+                texts_q, 
+                max_length=self.max_q_length,
+                truncation=True,
+                padding=True,
+                return_tensors=self.return_tensors
+        )
+        d_inputs = self.tokenizer(
+                texts_d,
+                max_length=self.max_d_length,
+                truncation=True,
+                padding=True,
+                return_tensors=self.return_tensors
+        )
+        return {'q_inputs': q_inputs, 'd_inputs': d_inputs}
+
+@dataclass
 class DataCollatorForDPR:
     """for biencoder models """
     tokenizer: Union[PreTrainedTokenizerBase] = None
@@ -45,17 +96,17 @@ class DataCollatorForDPR:
     padding: Union[bool, str] = True
     # spec
     istrain: Union[bool] = False
-    language: str = "en"
     # max_length: Optional[int] = 512
-    max_q_length: Optional[int] = 36
-    max_p_length: Optional[int] = 512
+    max_q_length: Optional[int] = None
+    max_p_length: Optional[int] = None
 
     def __call__(self, features: List[Dict[str, Any]]) -> Dict[str, Any]:
 
         # text and id info 
         texts_q = [batch['query'] for batch in features]
-        texts_p = [batch['passage'] for batch in features]
-        ids = [(batch['qid'], batch['did']) for batch in features]
+        texts_p_pos = [batch['positive'] for batch in features]
+        # positive/negative
+        texts_p_neg = [batch['negative'] for batch in features]
 
         # input # if istrain, the 'label' should be zero or one.
         q_inputs = self.tokenizer(
@@ -66,14 +117,19 @@ class DataCollatorForDPR:
                 return_tensors=self.return_tensors
         )
         p_inputs = self.tokenizer(
-                texts_p,
+                texts_p_pos + texts_p_neg,
                 max_length=self.max_p_length,
                 truncation=True,
                 padding=True,
                 return_tensors=self.return_tensors
         )
 
-        return q_inputs, p_inputs, ids
+        if istrain:
+            ids = [(batch['qid'], batch['did']) for batch in features]
+            labels = torch.tensor([batch['label'] for batch in features])
+            # do sth ...
+
+        return (q_inputs, d_inputs)
 
 @dataclass
 class DataCollatorFormonoT5:

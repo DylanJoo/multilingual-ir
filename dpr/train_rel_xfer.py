@@ -1,43 +1,40 @@
-# hacky import
-import sys
-sys.path.append('../')
-import sys
 import multiprocessing
 from dataclasses import dataclass, field
 from typing import Optional
-
 from transformers import (
     AutoConfig,
     AutoTokenizer,
     TrainingArguments,
-    Trainer,
     HfArgumentParser,
     DefaultDataCollator,
 )
 
 from datasets import load_dataset, DatasetDict
-from models import TctColBertForIR
-from datacollator import IRTripletCollator
+
+# hacky import
+import sys
+sys.path.append('/tmp2/jhju/multilingual-ir/')
+from encoder import BiEncoderForRelevanceTransfer
+from dataset.mmarco import join_dataset
+from datacollator import DataCollatorFormDPR
+from trainer import TrainerForBiEncoder
 
 import os
-os.environ["WANDB_DISABLED"] = "true"
+os.environ["WANDB_DISABLED"] = "false"
 
 # Arguments: (1) Model arguments (2) DataTraining arguments (3)
 @dataclass
 class OurModelArguments:
     # Huggingface's original arguments
-    # model_name_or_path: Optional[str] = field(default='bert-base-uncased')
-    config_name: Optional[str] = field(default='bert-base-uncased')
-    tokenizer_name: Optional[str] = field(default='bert-base-uncased')
+    model_name_or_path: Optional[str] = field(default='bert-base-uncased')
+    config_name: Optional[str] = field(default=None)
+    tokenizer_name: Optional[str] = field(default=None)
     cache_dir: Optional[str] = field(default=None)
     use_fast_tokenizer: bool = field(default=True)
     model_revision: str = field(default="main")
     use_auth_token: bool = field(default=False)
     # Cutomized arguments
-    query_encoder_model_name_or_path: Optional[str] = field(default='bert-base-uncased')
-    document_encoder_model_name_or_path: Optional[str] = field(default='bert-base-uncased')
-    # colbert_type: Optional[str] = field(default="colbert")
-    # dim: Optional[int] = field(default=128)
+    freeze_document_encoder: Optional[bool] = field(default=True)
 
 @dataclass
 class OurDataArguments:
@@ -47,12 +44,12 @@ class OurDataArguments:
     overwrite_cache: bool = field(default=False)
     validation_split_percentage: Optional[int] = field(default=5)
     preprocessing_num_workers: Optional[int] = field(default=None)
-    # train_file: Optional[str] = field(default=None)
+    train_file: Optional[str] = field(default=None)
     # eval_file: Optional[str] = field(default=None)
     # test_file: Optional[str] = field(default=None)
     # Customized arguments
-    # max_q_length: Optional[int] = field(default=32)
-    # max_p_length: Optional[int] = field(default=128)
+    max_q_length: Optional[int] = field(default=None)
+    max_d_length: Optional[int] = field(default=256)
 
 @dataclass
 class OurTrainingArguments(TrainingArguments):
@@ -73,7 +70,10 @@ class OurTrainingArguments(TrainingArguments):
     warmup_ratio: float = field(default=0.1)
     warmup_steps: int = field(default=0)
     resume_from_checkpoint: Optional[str] = field(default=None)
-    learning_rate: float = field(default=5e-5)
+    learning_rate: float = field(default=1e-5)
+    # Customized arguments
+    place_model_on_device: bool = field(default=False)
+    remove_unused_columns: bool = field(default=False)
 
 def main():
 
@@ -87,69 +87,44 @@ def main():
         # [CONCERN] Deprecated? or any parser issue.
         model_args, data_args, training_args = parser.parse_args_into_dataclasses()
 
-    config = AutoConfig.from_pretrained(
-            model_args.config_name, 
-            output_hidden_states=True
-    )
-    tokenizer = AutoTokenizer.from_pretrained(
-            model_args.tokenizer_name, 
-            cache_dir=model_args.cache_dir,
-            user_fast=model_args.use_fast_tokenizer
-    )
-
     # model
-    model_teacher = TctColBertForIR.from_pretrained(
-            pretrained_model_name_or_path=model_args.kd_teacher_model_name_or_path,
-            config=config,
-            colbert_type='colbert-inbatch',
-    ) if model_args.colbert_type == 'tctcolbert' else None
-
-    model_kwargs = {
-            'dim': model_args.dim,
-            'similarity_metric': 'cosine',
-            'mask_punctuation': True,
-            'kd_teacher': model_teacher,
-            'colbert_type': model_args.colbert_type
-    }
-    model = TctColBertForIR.from_pretrained(
-            pretrained_model_name_or_path=model_args.model_name_or_path,
-            config=config,
-            **model_kwargs
+    model = BiEncoderForRelevanceTransfer(
+            model_name=model_args.model_name_or_path,
+            tokenizer_name=model_args.tokenizer_name,
+            freeze_document_encoder=model_args.freeze_document_encoder
     )
 
     # Dataset
-    ## Loading form json
-    if training_args.do_eval:
-        dataset = DatasetDict.from_json({
-            "train": data_args.train_file,
-            "eval": data_args.eval_file
-        })
-    else:
-        dataset = DatasetDict.from_json({"train": data_args.train_file,})
-        data['eval'] = None
+    ## adjusted to multilingual (for relevance transfer)
+    dataset = join_dataset(data_args.train_file)
 
-    # data collator (transform the datset into the training mini-batch)
     ## Preprocessing
-    triplet_collator = IRTripletCollator(
-            tokenizer=tokenizer,
-            query_maxlen=data_args.max_q_seq_length,
-            doc_maxlen=data_args.max_p_seq_length,
-            in_batch_negative=(model_args.colbert_type != 'colbert')
+    datacollator = DataCollatorFormDPR(
+            tokenizer=model.tokenizer,
+            padding=True,
+            truncation=True,
+            max_q_length=data_args.max_q_length,
+            max_d_length=data_args.max_d_length,
     )
 
     # Trainer
-    trainer = Trainer(
+    trainer = TrainerForBiEncoder(
             model=model,
             args=training_args,
             train_dataset=dataset['train'],
-            eval_dataset=dataset['eval'],
-            data_collator=triplet_collator
+            eval_dataset=dataset['test'],
+            data_collator=datacollator
     )
+            # eval_dataset=dataset['test'],
 
     # ***** strat training *****
     results = trainer.train(
             resume_from_checkpoint=training_args.resume_from_checkpoint
     )
+
+    # [check]
+    state_dict = model.document_encoder.state_dict()
+    model.document_encoder.save_pretrained('checkpoint/document_encoder/', state_dict=state_dict)
 
     return results
 

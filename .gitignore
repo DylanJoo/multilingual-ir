@@ -6,3 +6,5 @@ __pycache__/
 */__pycache__/
 dataset/*json
 checkpoints/
+logs/
+wandb/
