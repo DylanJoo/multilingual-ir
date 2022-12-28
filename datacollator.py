@@ -52,15 +52,15 @@ class DataCollatorFormDPR:
     max_d_length: Optional[int] = None
 
     def relevance_transfer(self, features):
-        # rich lang
-        texts_q = [batch['query'] for batch in features]
-        texts_d_pos = [batch['positive'] for batch in features]
-        # low lang
-        texts_q += [batch['query_low'] for batch in features]
-        texts_d_pos += [batch['positive_low'] for batch in features]
+        # rich lang and low lang
+        texts_q = [batch['query'] for batch in features] * 2
+        texts_q += [batch['query_low'] for batch in features] * 2
 
-        # setting 1: only positive passages
-        texts_d = texts_d_pos
+        texts_d = [batch['positive'] for batch in features] 
+        texts_d += [batch['negative'] for batch in features] 
+        texts_d += [batch['positive_low'] for batch in features] 
+        texts_d += [batch['negative_low'] for batch in features] 
+
         return texts_q, texts_d
 
     def __call__(self, features: List[Dict[str, Any]]) -> Dict[str, Any]:

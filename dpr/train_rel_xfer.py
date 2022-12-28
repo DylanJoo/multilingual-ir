@@ -35,6 +35,7 @@ class OurModelArguments:
     use_auth_token: bool = field(default=False)
     # Cutomized arguments
     freeze_document_encoder: Optional[bool] = field(default=True)
+    pooler: str = field(default='cls')
 
 @dataclass
 class OurDataArguments:
@@ -91,7 +92,8 @@ def main():
     model = BiEncoderForRelevanceTransfer(
             model_name=model_args.model_name_or_path,
             tokenizer_name=model_args.tokenizer_name,
-            freeze_document_encoder=model_args.freeze_document_encoder
+            freeze_document_encoder=model_args.freeze_document_encoder,
+            pooling=model_args.pooler
     )
 
     # Dataset

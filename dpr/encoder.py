@@ -7,7 +7,7 @@ from loss import InBatchNegativeCELoss
 from typing import Optional
 
 class BiEncoderForRelevanceTransfer(nn.Module):
-    def __init__(self, model_name: str, tokenizer_name=None, device='cuda', freeze_document_encoder=False):
+    def __init__(self, model_name: str, tokenizer_name=None, device='cuda', freeze_document_encoder=False, pooling='cls'):
         super().__init__()
         self.device = device
         self.query_encoder = BertModel.from_pretrained(model_name, add_pooling_layer=False)
@@ -23,8 +23,7 @@ class BiEncoderForRelevanceTransfer(nn.Module):
             for p in self.document_encoder.parameters():
                 p.requires_grad = False
 
-        # required for huggingface trainer
-        # self.name_
+        self.pooling = pooling
 
     @staticmethod
     def _mean_pooling(last_hidden_state, attention_mask):
@@ -42,30 +41,38 @@ class BiEncoderForRelevanceTransfer(nn.Module):
                 **kwargs):
         # Sentence embeddings 
         d_outputs = self.document_encoder(**d_inputs)
-        d_embeddings = self._mean_pooling(d_outputs.last_hidden_state[:, 1:, :], d_inputs['attention_mask'][:, 1:])
         q_outputs = self.query_encoder(**q_inputs)
+        if self.pooling == 'mean':
+            d_embeddings = self._mean_pooling(d_outputs.last_hidden_state[:, 1:, :], d_inputs['attention_mask'][:, 1:])
+            q_embeddings = self._mean_pooling(q_outputs.last_hidden_state[:, 1:, :], q_inputs['attention_mask'][:, 1:])
+        else:
+            d_embeddings = d_outputs.last_hidden_state[:, 0, :]
+            q_embeddings = q_outputs.last_hidden_state[:, 0, :]
 
-        q_embeddings = self._mean_pooling(q_outputs.last_hidden_state[:, 1:, :], q_inputs['attention_mask'][:, 1:])
-        q_outputs = self.query_encoder(**q_inputs)
+        # separate the positive and negative:w
         relevance_embeddings = d_embeddings * q_embeddings # Lang*B H
 
         # language relevance transfer 
         language_border = relevance_embeddings.size(0) // 2
         rich_lang_rel_embeddings = relevance_embeddings[:language_border, :] # B H
         low_lang_rel_embeddings = relevance_embeddings[language_border:, :]  # B H
-        lang_rel_cosine = rich_lang_rel_embeddings @ low_lang_rel_embeddings.permute(1, 0) # B B 
+        lang_rel_cosine = rich_lang_rel_embeddings @ low_lang_rel_embeddings.T # B B 
         loss_xfer = InBatchNegativeCELoss(lang_rel_cosine)
 
         # constrastive learning with in-batch negative training
         ## [TODO] add hard negative 
         ## [TODO] add knowledge distilation
-        ranking_cosine = d_embeddings @ q_embeddings.permute(1, 0) # Lang*B Lang*B
+        ranking_border = language_border // 2
+        ranking_cosine = q_embeddings[:ranking_border, :] @ d_embeddings[:language_border, :].T # Lang*B Lang*B
+        ranking_cosine_low = q_embeddings[language_border+ranking_border:, :] @ d_embeddings[language_border:, :].T # Lang*B Lang*B
         loss_rank = InBatchNegativeCELoss(ranking_cosine)
+        loss_rank_low = InBatchNegativeCELoss(ranking_cosine_low)
+        loss = loss_xfer + loss_rank + loss_rank_low
 
-        loss = loss_xfer + loss_rank
         # print('loss:', loss.detach().cpu().numpy(), 
         #       'loss-xfer:', loss_xfer.detach().cpu().numpy(), 
-        #       'loss-rank', loss_rank.detach().cpu().numpy())
+        #       'loss-rank', loss_rank.detach().cpu().numpy(),
+        #       'loss-rank (low) ', loss_rank_low.detach().cpu().numpy())
 
         return {'loss': loss, 'score': torch.diag(ranking_cosine)}
 

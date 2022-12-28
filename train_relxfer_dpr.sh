@@ -1,4 +1,4 @@
-export CUDA_VISIBLE_DEVICES=2
+export CUDA_VISIBLE_DEVICES=0,2
 # Training using the parallel msmarco of few languages
 
 python3 dpr/train_rel_xfer.py \
@@ -10,10 +10,11 @@ python3 dpr/train_rel_xfer.py \
   --train_file dataset/mmarco.400k.english.json \
   --max_q_length 64 \
   --max_d_length 256 \
-  --per_device_train_batch_size 128 \
+  --per_device_train_batch_size 64 \
   --evaluation_strategy 'steps'\
-  --max_steps 100000 \
-  --save_steps 10000 \
-  --eval_steps 10000 \
+  --max_steps 50000 \
+  --save_steps 5000 \
+  --eval_steps 5000 \
   --do_train \
   --do_eval
+
