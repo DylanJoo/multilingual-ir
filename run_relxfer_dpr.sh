@@ -7,7 +7,7 @@ for lang in ar bn en es fa fi fr hi zh id ja ko ru sw te th;do
       --encoder-class auto \
       --device cuda:1 \
       --tokenizer castorini/mdpr-tied-pft-msmarco \
-      --encoder checkpoints/mdpr-tied-pft-msmarco-rel-xfer/checkpoint-10000 \
+      --encoder checkpoints/mdpr-tied-pft-msmarco-rel-xfer-vanilla/checkpoint-1000 \
       --topics miracl-v1.0-${lang}-dev \
       --index miracl-v1.0-${lang}-mdpr-tied-pft-msmarco \
       --output runs/run.miracl.mdprxfer.${lang}.dev.txt \

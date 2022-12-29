@@ -49,7 +49,7 @@ def join_dataset(english_file, mixing_type='english-x', do_eval=False):
         dataset_lang_split = dataset_low[lang][lang_split_indices]
         dataset_mixing['query'] += dataset_lang_split['query']
         dataset_mixing['positive'] += dataset_lang_split['positive']
-        dataset_mixing['negative'] += dataset_lang_split['query']
+        dataset_mixing['negative'] += dataset_lang_split['negative']
         dataset_mixing['lang'] += [lang] * len(lang_split_indices)
 
     for column in dataset_mixing:

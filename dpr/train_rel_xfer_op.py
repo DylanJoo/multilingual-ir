@@ -14,7 +14,7 @@ from datasets import load_dataset, DatasetDict
 # hacky import
 import sys
 sys.path.append('/tmp2/jhju/multilingual-ir/')
-from encoder import BiEncoderForRelevanceTransfer
+from encoder_op import BiEncoderForRelevanceTransfer
 from dataset.mmarco import join_dataset
 from datacollator import DataCollatorFormDPR
 from trainer import TrainerForBiEncoder
@@ -117,7 +117,7 @@ def main():
             args=training_args,
             train_dataset=dataset['train'],
             eval_dataset=dataset['test'],
-            data_collator=datacollator
+            data_collator=datacollator,
     )
             # eval_dataset=dataset['test'],
 

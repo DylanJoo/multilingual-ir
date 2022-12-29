@@ -3,7 +3,7 @@ import torch.nn as nn
 if torch.cuda.is_available():
     from torch.cuda.amp import autocast
 from transformers import BertModel, AutoTokenizer
-from loss import InBatchNegativeCELoss
+from loss import InBatchNegativeCELoss, InBatchKLLoss
 from typing import Optional
 
 class BiEncoderForRelevanceTransfer(nn.Module):
@@ -34,47 +34,51 @@ class BiEncoderForRelevanceTransfer(nn.Module):
         return sum_embeddings / sum_mask
     
     def forward(self, 
-                q_inputs, 
-                d_inputs,
+                qr_inputs, dr_inputs, ql_inputs, dl_inputs,
                 labels: Optional[torch.Tensor] = None,
                 keep_d_dims: bool = True,
                 **kwargs):
-        # Sentence embeddings 
-        d_outputs = self.document_encoder(**d_inputs)
-        q_outputs = self.query_encoder(**q_inputs)
-        if self.pooling == 'mean':
-            d_embeddings = self._mean_pooling(d_outputs.last_hidden_state[:, 1:, :], d_inputs['attention_mask'][:, 1:])
-            q_embeddings = self._mean_pooling(q_outputs.last_hidden_state[:, 1:, :], q_inputs['attention_mask'][:, 1:])
-        else:
-            d_embeddings = d_outputs.last_hidden_state[:, 0, :]
-            q_embeddings = q_outputs.last_hidden_state[:, 0, :]
 
-        # separate the positive and negative:w
-        relevance_embeddings = d_embeddings * q_embeddings # Lang*B H
+        # Sentence embeddings 
+        qr_outputs = self.query_encoder(**qr_inputs)
+        dr_outputs = self.document_encoder(**dr_inputs)
+        ql_outputs = self.query_encoder(**ql_inputs)
+        dl_outputs = self.document_encoder(**dl_inputs)
+
+        if self.pooling == 'mean':
+            qr_embeddings = self._mean_pooling(qr_outputs.last_hidden_state[:, 1:, :], qr_inputs['attention_mask'][:, 1:])
+            dr_embeddings = self._mean_pooling(dr_outputs.last_hidden_state[:, 1:, :], dr_inputs['attention_mask'][:, 1:])
+            ql_embeddings = self._mean_pooling(ql_outputs.last_hidden_state[:, 1:, :], ql_inputs['attention_mask'][:, 1:])
+            dl_embeddings = self._mean_pooling(d1_outputs.last_hidden_state[:, 1:, :], d1_inputs['attention_mask'][:, 1:])
+        else:
+            qr_embeddings = qr_outputs.last_hidden_state[:, 0, :]
+            dr_embeddings = dr_outputs.last_hidden_state[:, 0, :]
+            ql_embeddings = ql_outputs.last_hidden_state[:, 0, :]
+            dl_embeddings = dl_outputs.last_hidden_state[:, 0, :]
+
+        ## [TODO] 
+        ### add hard negative 
+        ### add knowledge distilation
+
+        # text ranking 
+        ## OBJ1: constrastive learning with in-batch negative training
+        ranking_cosine_rich = qr_embeddings @ dr_embeddings.T # B B
+        ranking_cosine_low = ql_embeddings @ dl_embeddings.T # B B
+        loss_rank_rich = InBatchNegativeCELoss(ranking_cosine_rich)
+        loss_rank_low = InBatchNegativeCELoss(ranking_cosine_low)
 
         # language relevance transfer 
-        language_border = relevance_embeddings.size(0) // 2
-        rich_lang_rel_embeddings = relevance_embeddings[:language_border, :] # B H
-        low_lang_rel_embeddings = relevance_embeddings[language_border:, :]  # B H
-        lang_rel_cosine = rich_lang_rel_embeddings @ low_lang_rel_embeddings.T # B B 
-        loss_xfer = InBatchNegativeCELoss(lang_rel_cosine)
+        ## OBJ2-a: language relevance transfer (distilation)
+        loss_rank_xfer = InBatchKLLoss(ranking_cosine_low, ranking_cosine_rich)
 
-        # constrastive learning with in-batch negative training
-        ## [TODO] add hard negative 
-        ## [TODO] add knowledge distilation
-        ranking_border = language_border // 2
-        ranking_cosine = q_embeddings[:ranking_border, :] @ d_embeddings[:language_border, :].T # Lang*B Lang*B
-        ranking_cosine_low = q_embeddings[language_border+ranking_border:, :] @ d_embeddings[language_border:, :].T # Lang*B Lang*B
-        loss_rank = InBatchNegativeCELoss(ranking_cosine)
-        loss_rank_low = InBatchNegativeCELoss(ranking_cosine_low)
-        loss = loss_xfer + loss_rank + loss_rank_low
+        loss = loss_rank_xfer + loss_rank_low # + loss_rank_rich
 
         # print('loss:', loss.detach().cpu().numpy(), 
-        #       'loss-xfer:', loss_xfer.detach().cpu().numpy(), 
-        #       'loss-rank', loss_rank.detach().cpu().numpy(),
-        #       'loss-rank (low) ', loss_rank_low.detach().cpu().numpy())
+        #       'loss-xfer:', loss_rank_xfer.detach().cpu().numpy(), 
+        #       'loss-rank (low) ', loss_rank_low.detach().cpu().numpy(),
+        #       'loss-rank (rich) ', loss_rank_rich.detach().cpu().numpy())
 
-        return {'loss': loss, 'score': torch.diag(ranking_cosine)}
+        return {'loss': loss, 'score': torch.diag(ranking_cosine_low)}
 
 
 class BertEncoder:
