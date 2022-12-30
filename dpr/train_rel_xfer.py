@@ -11,10 +11,8 @@ from transformers import (
 
 from datasets import load_dataset, DatasetDict
 
-# hacky import
 import sys
 sys.path.append('/tmp2/jhju/multilingual-ir/')
-from encoder import BiEncoderForRelevanceTransfer
 from dataset.mmarco import join_dataset
 from datacollator import DataCollatorFormDPR
 from trainer import TrainerForBiEncoder
@@ -76,6 +74,7 @@ class OurTrainingArguments(TrainingArguments):
     # Customized arguments
     place_model_on_device: bool = field(default=False)
     remove_unused_columns: bool = field(default=False)
+    language_relxfer: str = 'distill'
 
 def main():
 
@@ -90,6 +89,11 @@ def main():
         model_args, data_args, training_args = parser.parse_args_into_dataclasses()
 
     # model
+    if training_args.language_relxfer == 'distill':
+        from encoder_distill import BiEncoderForRelevanceTransfer
+    if training_args.language_relxfer == 'constrast':
+        from encoder_contrast import BiEncoderForRelevanceTransfer
+
     model = BiEncoderForRelevanceTransfer(
             model_name=model_args.model_name_or_path,
             tokenizer_name=model_args.tokenizer_name,

@@ -108,7 +108,7 @@ def main():
             truncation=True,
             max_q_length=data_args.max_q_length,
             max_d_length=data_args.max_d_length,
-            use_only_positive=data_args.use_only_positive
+            use_only_positive=True,
     )
 
     # Trainer

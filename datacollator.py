@@ -50,39 +50,28 @@ class DataCollatorFormDPR:
     # max_length: Optional[int] = 512
     max_q_length: Optional[int] = None
     max_d_length: Optional[int] = None
+    # language_relxfer: str = 'distill'
     use_only_positive: Union[bool, str] = True
 
-    def relevance_transfer_only_positive(self, features):
-        """
-        Double loss, use only positive and (in-batch negative)
-        """
-        texts_q = [batch['query'] for batch in features]
-        texts_d_pos = [batch['positive'] for batch in features]
-        texts_q += [batch['query_low'] for batch in features]
-        texts_d_pos += [batch['positive_low'] for batch in features]
-
-        return texts_q, texts_d_pos
-
-    def relevance_transfer(self, features):
-        """
-        Triplet loss, hard positive and negative
-        """
+    def relevance_transfer(self, features, only_positive=True):
         # rich lang and low lang query
         texts_q_rich = [batch['query'] for batch in features]
         texts_q_low = [batch['query_low'] for batch in features]
 
         # rich lang and low land positive passage
         texts_d_rich = [batch['positive'] for batch in features] 
-        texts_d_rich += [batch['negative'] for batch in features] 
         texts_d_low = [batch['positive_low'] for batch in features] 
-        texts_d_low += [batch['negative_low'] for batch in features] 
+
+        if only_positive is False:
+            texts_d_rich += [batch['negative'] for batch in features] 
+            texts_d_low += [batch['negative_low'] for batch in features] 
 
         return texts_q_rich, texts_d_rich, texts_q_low, texts_d_low
 
-    def _tokenize(self, text):
+    def _tokenize(self, text, max_length):
         inputs = self.tokenizer(
                 text,
-                max_length=self.max_d_length,
+                max_length=max_length,
                 truncation='only_first',
                 padding=True,
                 add_special_tokens=True,
@@ -92,22 +81,20 @@ class DataCollatorFormDPR:
         return inputs
 
     def __call__(self, features: List[Dict[str, Any]]) -> Dict[str, Any]:
+        """
+        Returns: 
+        q*_inputs: batch size of query (B, Lq)
+        d*_inputs: batch size of doucment (english and low-resource lang) (Bx2, Ld)
+        """
         # input # if istrain, the 'label' should be zero or one.
 
-        # text and id info
-        if self.use_only_positive:
-            texts_q, texts_d = self.relevance_transfer_only_positive(features)
-            q_inputs = self._tokenize(texts_q)
-            d_inputs = self._tokenize(texts_d)
-            return {'q_inputs': q_inputs, 'd_inputs': d_inputs)
-        else:
-            texts_q_rich, texts_d_rich, texts_q_low, texts_d_low = self.relevance_transfer(features)
-            q_rich_inputs = self._tokenize(texts_q_rich) 
-            d_rich_inputs = self._tokenize(texts_d_rich)
-            q_low_inputs = self._tokenize(texts_q_low)
-            d_low_inputs = self._tokenize(texts_d_low)
-            return {'qr_inputs': q_rich_inputs, 'dr_inputs': d_rich_inputs, 
-                    'ql_inputs': q_low_inputs, 'dl_inputs': d_low_inputs,}
+        texts_q_en, texts_d_en, texts_q_low, texts_d_low = self.relevance_transfer(features, self.use_only_positive)
+        q_rich_inputs = self._tokenize(texts_q_en, self.max_q_length) 
+        d_rich_inputs = self._tokenize(texts_d_en, self.max_d_length)
+        q_low_inputs = self._tokenize(texts_q_low, self.max_q_length)
+        d_low_inputs = self._tokenize(texts_d_low, self.max_d_length)
+        return {'qr_inputs': q_rich_inputs, 'dr_inputs': d_rich_inputs, 
+                'ql_inputs': q_low_inputs, 'dl_inputs': d_low_inputs}
 
 @dataclass
 class DataCollatorForDPR:

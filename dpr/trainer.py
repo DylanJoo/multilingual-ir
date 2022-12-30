@@ -29,8 +29,8 @@ class TrainerForBiEncoder(Trainer):
                 # if state_dict is None:
                 state_dict = self.model.query_encoder.state_dict()
                 unwrap_model(self.model.query_encoder).save_pretrained(output_dir, state_dict=state_dict)
-                state_dict = self.model.document_encoder.state_dict()
-                unwrap_model(self.model.document_encoder).save_pretrained(output_dir, state_dict=state_dict)
+                # state_dict = self.model.document_encoder.state_dict()
+                # unwrap_model(self.model.document_encoder).save_pretrained(output_dir, state_dict=state_dict)
             else:
                 logger.info("Trainer.model is not a `PreTrainedModel`, only saving its state dict.")
                 # if state_dict is None:
