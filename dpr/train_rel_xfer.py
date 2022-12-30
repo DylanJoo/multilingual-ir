@@ -91,7 +91,7 @@ def main():
     # model
     if training_args.language_relxfer == 'distill':
         from encoder_distill import BiEncoderForRelevanceTransfer
-    if training_args.language_relxfer == 'constrast':
+    if training_args.language_relxfer == 'contrast':
         from encoder_contrast import BiEncoderForRelevanceTransfer
 
     model = BiEncoderForRelevanceTransfer(

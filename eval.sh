@@ -55,7 +55,7 @@ for lang in ar bn en es fa fi fr hi id ja ko ru sw te th zh;do
         -m ndcg_cut.10 $qrel $run | cut -f3 | sed ':a; N; $!ba; s/\n/|/g'
 
     echo -n $lang '| mDPR-xfer-op (10K) |';
-    run=runs/run.miracl.mdprxfer-op.lang.dev/run.miracl.mdprxfer-op.$lang.dev.txt
+    run=runs/run.miracl.mdprxfer-op-all.lang.dev/run.miracl.mdprxfer-op-all.$lang.dev.txt
     qrel=/home/jhju/.cache/pyserini/topics-and-qrels/qrels.miracl-v1.0-${lang}-dev.tsv
     ./trec_eval-9.0.7/trec_eval -c \
         -m recall.100 \

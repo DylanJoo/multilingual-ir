@@ -8,6 +8,7 @@ python3 dpr/train_rel_xfer.py \
   --config_name castorini/mdpr-tied-pft-msmarco \
   --output_dir ./checkpoints/mdpr-tied-pft-msmarco-rel-xfer-distill \
   --train_file dataset/mmarco.400k.english.json \
+  --language_relxfer 'distill' \
   --max_q_length 64 \
   --max_d_length 256 \
   --per_device_train_batch_size 64 \

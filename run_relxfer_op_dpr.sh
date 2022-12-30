@@ -10,7 +10,7 @@ if [[ "$1" == *"dev"* ]]; then
           --encoder-class auto \
           --device cuda \
           --tokenizer castorini/mdpr-tied-pft-msmarco \
-          --encoder checkpoints/mdpr-tied-pft-msmarco-rel-xfer/checkpoint-10000 \
+          --encoder checkpoints/mdpr-tied-pft-msmarco-rel-xfer/checkpoint-3000 \
           --topics miracl-v1.0-${lang}-dev \
           --index miracl-v1.0-${lang}-mdpr-tied-pft-msmarco \
           --output runs/$setting/${setting/lang/${lang}}.txt \
@@ -26,7 +26,7 @@ if [[ "$1" == *"test-a"* ]]; then
           --encoder-class auto \
           --device cuda \
           --tokenizer castorini/mdpr-tied-pft-msmarco \
-          --encoder checkpoints/mdpr-tied-pft-msmarco-rel-xfer/checkpoint-10000 \
+          --encoder checkpoints/mdpr-tied-pft-msmarco-rel-xfer/checkpoint-3000 \
           --topics ./dataset/topics.miracl-v1.0-${lang}-test-a.tsv \
           --index miracl-v1.0-${lang}-mdpr-tied-pft-msmarco \
           --output runs/$setting/${setting/lang/${lang}}.txt \
