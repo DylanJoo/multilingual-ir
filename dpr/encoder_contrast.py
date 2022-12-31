@@ -70,10 +70,9 @@ class BiEncoderForRelevanceTransfer(nn.Module):
 
         loss_rel_xfer = InBatchNegativeCELoss(lang_rel_cosine)
 
-        # OBJ2: separate the positive and negative
-        # constrastive learning with in-batch negative training
-        ranking_cosine_rich = qr_embeddings @ d_embeddings.T # B Bx2
-        ranking_cosine_low = qr_embeddings @ d_embeddings.T # B Bx2
+        # OBJ2: constrastive learning with in-batch negative training
+        ranking_cosine_rich = qr_embeddings[:positive_border, :] @ dr_embeddings.T # B Bx2
+        ranking_cosine_low = ql_embeddings[:positive_border, :] @ dl_embeddings.T # B Bx2
         loss_rank_rich = InBatchNegativeCELoss(ranking_cosine_rich)
         loss_rank_low = InBatchNegativeCELoss(ranking_cosine_low)
         loss_rank_xfer = InBatchKLLoss(ranking_cosine_low, ranking_cosine_rich)

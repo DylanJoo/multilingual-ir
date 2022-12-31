@@ -19,42 +19,42 @@ for lang in ar bn en es fa fi fr hi id ja ko ru sw te th zh;do
         -m recall.100 \
         -m ndcg_cut.10 $qrel $run | cut -f3 | sed ':a; N; $!ba; s/\n/|/g'
 
-    echo -n $lang '| mDPR-xfer-vanilla (1K) |';
+    echo -n $lang '| mDPR-xfer-setting1 (1K) |';
     run=runs/run.miracl.mdprxfer-few.lang.dev/run.miracl.mdprxfer-few.$lang.dev.txt
     qrel=/home/jhju/.cache/pyserini/topics-and-qrels/qrels.miracl-v1.0-${lang}-dev.tsv
     ./trec_eval-9.0.7/trec_eval -c \
         -m recall.100 \
         -m ndcg_cut.10 $qrel $run | cut -f3 | sed ':a; N; $!ba; s/\n/|/g'
 
-    echo -n $lang '| mDPR-xfer-vanilla (3K)|';
+    echo -n $lang '| mDPR-xfer-setting1 (3K)|';
     run=runs/run.miracl.mdprxfer-med.lang.dev/run.miracl.mdprxfer-med.$lang.dev.txt
     qrel=/home/jhju/.cache/pyserini/topics-and-qrels/qrels.miracl-v1.0-${lang}-dev.tsv
     ./trec_eval-9.0.7/trec_eval -c \
         -m recall.100 \
         -m ndcg_cut.10 $qrel $run | cut -f3 | sed ':a; N; $!ba; s/\n/|/g'
 
-    echo -n $lang '| mDPR-xfer-vanilla (10K) |';
+    echo -n $lang '| mDPR-xfer-setting1 (10K) |';
     run=runs/run.miracl.mdprxfer-all.lang.dev/run.miracl.mdprxfer-all.$lang.dev.txt
     qrel=/home/jhju/.cache/pyserini/topics-and-qrels/qrels.miracl-v1.0-${lang}-dev.tsv
     ./trec_eval-9.0.7/trec_eval -c \
         -m recall.100 \
         -m ndcg_cut.10 $qrel $run | cut -f3 | sed ':a; N; $!ba; s/\n/|/g'
 
-    echo -n $lang '| mDPR-xfer-op (1K) |';
+    echo -n $lang '| mDPR-xfer-setting2 (1K) |';
     run=runs/run.miracl.mdprxfer-op-few.lang.dev/run.miracl.mdprxfer-op-few.$lang.dev.txt
     qrel=/home/jhju/.cache/pyserini/topics-and-qrels/qrels.miracl-v1.0-${lang}-dev.tsv
     ./trec_eval-9.0.7/trec_eval -c \
         -m recall.100 \
         -m ndcg_cut.10 $qrel $run | cut -f3 | sed ':a; N; $!ba; s/\n/|/g'
 
-    echo -n $lang '| mDPR-xfer-op (3K) |';
+    echo -n $lang '| mDPR-xfer-setting2 (3K) |';
     run=runs/run.miracl.mdprxfer-op-med.lang.dev/run.miracl.mdprxfer-op-med.$lang.dev.txt
     qrel=/home/jhju/.cache/pyserini/topics-and-qrels/qrels.miracl-v1.0-${lang}-dev.tsv
     ./trec_eval-9.0.7/trec_eval -c \
         -m recall.100 \
         -m ndcg_cut.10 $qrel $run | cut -f3 | sed ':a; N; $!ba; s/\n/|/g'
 
-    echo -n $lang '| mDPR-xfer-op (10K) |';
+    echo -n $lang '| mDPR-xfer-setting2 (10K) |';
     run=runs/run.miracl.mdprxfer-op-all.lang.dev/run.miracl.mdprxfer-op-all.$lang.dev.txt
     qrel=/home/jhju/.cache/pyserini/topics-and-qrels/qrels.miracl-v1.0-${lang}-dev.tsv
     ./trec_eval-9.0.7/trec_eval -c \

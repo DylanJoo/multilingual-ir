@@ -63,6 +63,8 @@ class DataCollatorFormDPR:
         texts_d_low = [batch['positive_low'] for batch in features] 
 
         if only_positive is False:
+            texts_q_rich += [batch['query'] for batch in features]
+            texts_q_low += [batch['query_low'] for batch in features]
             texts_d_rich += [batch['negative'] for batch in features] 
             texts_d_low += [batch['negative_low'] for batch in features] 
 

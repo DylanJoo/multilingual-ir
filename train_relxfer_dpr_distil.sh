@@ -1,4 +1,4 @@
-export CUDA_VISIBLE_DEVICES=1,2
+export CUDA_VISIBLE_DEVICES=0,2
 # Training using the parallel msmarco of few languages
 
 python3 dpr/train_rel_xfer.py \
