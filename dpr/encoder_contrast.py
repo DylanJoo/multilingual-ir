@@ -63,10 +63,10 @@ class BiEncoderForRelevanceTransfer(nn.Module):
         ## setting 0: only use positive relevance constrastive learning # B(en) B(other)
         # lang_rel_cosine = rich_lang_rel_embeddings[:positive_border, :] @ low_lang_rel_embeddings[:positive_border, :].T 
         ## setting 1: add soft-negative relevance constrastive # B(en-pos) Bx2(other-pos;other-neg)
-        lang_rel_cosine = rich_lang_rel_embeddings[:positive_border, :] @ low_lang_rel_embeddings.T # B B 
+        lang_rel_cosine = rich_lang_rel_embeddings[:positive_border, :] @ low_lang_rel_embeddings.T # B Bx2
         ## setting 2: add hard-negative relevance constrastive # B(en) Bx3(other-pos;other-neg;en-neg)
         # hard_negative = torch.concat((low_lang_rel_embeddings, rich_lang_rel_embeddings[positive_border:, :]), 0)
-        # lang_rel_cosine = rich_lang_rel_embeddings[:positive_border, :] @ hard_negative.T # B B 
+        # lang_rel_cosine = rich_lang_rel_embeddings[:positive_border, :] @ hard_negative.T # B Bx3
 
         loss_rel_xfer = InBatchNegativeCELoss(lang_rel_cosine)
 

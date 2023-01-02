@@ -61,13 +61,27 @@ for lang in ar bn en es fa fi fr hi id ja ko ru sw te th zh;do
         -m recall.100 \
         -m ndcg_cut.10 $qrel $run | cut -f3 | sed ':a; N; $!ba; s/\n/|/g'
 
-    # echo  $lang '| mDPR-xfer-med |'
-    # run=runs/run.miracl.mdprxfer-med.lang.dev/run.miracl.mdprxfer-med.$lang.dev.txt
-    # qrel=/home/jhju/.cache/pyserini/topics-and-qrels/qrels.miracl-v1.0-${lang}-dev.tsv
-    # ./trec_eval-9.0.7/trec_eval -c \
-    #     -m recall.100 \
-    #     -m ndcg_cut.10 $qrel $run | cut -f3 | sed ':a; N; $!ba; s/\n/|/g'
-    #
+    echo -n $lang '| mDPR-xfer-distill (1K) |';
+    run=runs/run.miracl.mdprxfer-distill-few.lang.dev/run.miracl.mdprxfer-distill-few.$lang.dev.txt
+    qrel=/home/jhju/.cache/pyserini/topics-and-qrels/qrels.miracl-v1.0-${lang}-dev.tsv
+    ./trec_eval-9.0.7/trec_eval -c \
+        -m recall.100 \
+        -m ndcg_cut.10 $qrel $run | cut -f3 | sed ':a; N; $!ba; s/\n/|/g'
+
+    echo -n $lang '| mDPR-xfer-distill (10K) |';
+    run=runs/run.miracl.mdprxfer-distill-all.lang.dev/run.miracl.mdprxfer-distill-all.$lang.dev.txt
+    qrel=/home/jhju/.cache/pyserini/topics-and-qrels/qrels.miracl-v1.0-${lang}-dev.tsv
+    ./trec_eval-9.0.7/trec_eval -c \
+        -m recall.100 \
+        -m ndcg_cut.10 $qrel $run | cut -f3 | sed ':a; N; $!ba; s/\n/|/g'
+
+    echo -n $lang '| mDPR-xfer-contrast (1K) |';
+    run=runs/run.miracl.mdprxfer-contrast-few.lang.dev/run.miracl.mdprxfer-contrast-few.$lang.dev.txt
+    qrel=/home/jhju/.cache/pyserini/topics-and-qrels/qrels.miracl-v1.0-${lang}-dev.tsv
+    ./trec_eval-9.0.7/trec_eval -c \
+        -m recall.100 \
+        -m ndcg_cut.10 $qrel $run | cut -f3 | sed ':a; N; $!ba; s/\n/|/g'
+
     # echo  $lang '| mDPR + monoMT5 |'
     # run=runs/run.miracl.mdpr.mt5-rerank.lang.dev/run.miracl.mdpr.mt5-rerank.$lang.dev.txt
     # qrel=/home/jhju/.cache/pyserini/topics-and-qrels/qrels.miracl-v1.0-${lang}-dev.tsv

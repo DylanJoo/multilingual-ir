@@ -57,8 +57,8 @@ class BiEncoderForRelevanceTransfer(nn.Module):
             dl_embeddings = dl_outputs.last_hidden_state[:, 0, :]
 
         ## OBJ1: in-batch negative training for ranking 
-        ranking_cosine_rich = qr_embeddings @ dr_embeddings.T # B B
-        ranking_cosine_low = ql_embeddings @ dl_embeddings.T # B B
+        ranking_cosine_rich = qr_embeddings @ dr_embeddings.T # B 2B
+        ranking_cosine_low = ql_embeddings @ dl_embeddings.T # B 2B
         loss_rank_rich = InBatchNegativeCELoss(ranking_cosine_rich)
         loss_rank_low = InBatchNegativeCELoss(ranking_cosine_low)
 

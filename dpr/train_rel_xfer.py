@@ -49,7 +49,6 @@ class OurDataArguments:
     # Customized arguments
     max_q_length: Optional[int] = field(default=None)
     max_d_length: Optional[int] = field(default=256)
-    use_only_positive: bool = field(default=False)
 
 @dataclass
 class OurTrainingArguments(TrainingArguments):
@@ -112,7 +111,7 @@ def main():
             truncation=True,
             max_q_length=data_args.max_q_length,
             max_d_length=data_args.max_d_length,
-            use_only_positive=data_args.use_only_positive
+            query_aligned=True if training_args.language_relxfer == 'contrast' else False
     )
 
     # Trainer
@@ -129,10 +128,6 @@ def main():
     results = trainer.train(
             resume_from_checkpoint=training_args.resume_from_checkpoint
     )
-
-    # [check]
-    state_dict = model.document_encoder.state_dict()
-    model.document_encoder.save_pretrained('checkpoint/document_encoder/', state_dict=state_dict)
 
     return results
 

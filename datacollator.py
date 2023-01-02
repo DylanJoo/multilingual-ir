@@ -50,23 +50,26 @@ class DataCollatorFormDPR:
     # max_length: Optional[int] = 512
     max_q_length: Optional[int] = None
     max_d_length: Optional[int] = None
+    query_aligned: Union[bool] = False
     # language_relxfer: str = 'distill'
-    use_only_positive: Union[bool, str] = True
 
-    def relevance_transfer(self, features, only_positive=True):
+    def relevance_transfer(self, features):
+        """
+        query_aligned: duplicated query inputs for positive doucment and negative ones.
+        """
         # rich lang and low lang query
         texts_q_rich = [batch['query'] for batch in features]
         texts_q_low = [batch['query_low'] for batch in features]
 
         # rich lang and low land positive passage
         texts_d_rich = [batch['positive'] for batch in features] 
+        texts_d_rich += [batch['negative'] for batch in features] 
         texts_d_low = [batch['positive_low'] for batch in features] 
+        texts_d_low += [batch['negative_low'] for batch in features] 
 
-        if only_positive is False:
+        if self.query_aligned:
             texts_q_rich += [batch['query'] for batch in features]
             texts_q_low += [batch['query_low'] for batch in features]
-            texts_d_rich += [batch['negative'] for batch in features] 
-            texts_d_low += [batch['negative_low'] for batch in features] 
 
         return texts_q_rich, texts_d_rich, texts_q_low, texts_d_low
 
@@ -90,7 +93,7 @@ class DataCollatorFormDPR:
         """
         # input # if istrain, the 'label' should be zero or one.
 
-        texts_q_en, texts_d_en, texts_q_low, texts_d_low = self.relevance_transfer(features, self.use_only_positive)
+        texts_q_en, texts_d_en, texts_q_low, texts_d_low = self.relevance_transfer(features)
         q_rich_inputs = self._tokenize(texts_q_en, self.max_q_length) 
         d_rich_inputs = self._tokenize(texts_d_en, self.max_d_length)
         q_low_inputs = self._tokenize(texts_q_low, self.max_q_length)
